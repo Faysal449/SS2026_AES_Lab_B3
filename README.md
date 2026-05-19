@@ -11,7 +11,7 @@ This project is also connected to our **seminar paper on OPC UA**, where we stud
 
 ---
 
-## Since our seminar paper focuses on OPC UA, we are integrating OPC UA into this project to demonstrate how the theoretical concept can be applied in a practical smart factory monitoring system.##
+## Since our seminar paper focuses on OPC UA, we are integrating OPC UA into this project to demonstrate how the theoretical concept can be applied in a practical smart factory monitoring system.
 
 In this project:
 
