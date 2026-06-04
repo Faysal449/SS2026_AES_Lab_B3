@@ -1,1 +1,117 @@
-blank
+blank#include <WiFiNINA.h>
+#include <PubSubClient.h>
+
+char ssid[] = "Faysal";
+char pass[] = "87654321";
+
+const char* mqtt_server = "10.153.76.64";
+
+const int flamePin = A0;
+const int FLAME_THRESHOLD = 400;
+
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
+
+void connectWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, pass);
+
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(500);
+    Serial.print(".");
+    attempts++;
+  }
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("WiFi connected. IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.print("WiFi FAILED. Status: ");
+    Serial.println(WiFi.status());
+    WiFi.disconnect();
+    delay(2000);
+  }
+}
+
+void connectMQTT() {
+  int retries = 0;
+  while (!mqttClient.connected() && retries < 5) {
+    Serial.print("Connecting to MQTT... ");
+    if (mqttClient.connect("flame_node")) {
+      Serial.println("connected!");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.println(mqttClient.state());
+      delay(2000);
+      retries++;
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(9600);
+  delay(1000);
+
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("ERROR: No WiFi module!");
+    while (true);
+  }
+
+  Serial.print("Firmware: ");
+  Serial.println(WiFi.firmwareVersion());
+
+  pinMode(flamePin, INPUT);
+  connectWiFi();
+  mqttClient.setServer(mqtt_server, 1883);
+  connectMQTT();
+}
+
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi lost. Reconnecting...");
+    connectWiFi();
+    if (WiFi.status() != WL_CONNECTED) return;
+  }
+
+  if (!mqttClient.connected()) {
+    Serial.println("MQTT lost. Reconnecting...");
+    connectMQTT();
+  }
+
+  mqttClient.loop();
+
+  int flameRaw = analogRead(flamePin);
+  bool flameDetected = flameRaw < FLAME_THRESHOLD;
+
+  Serial.print("Flame Raw: ");
+  Serial.print(flameRaw);
+  Serial.print("  |  Status: ");
+  if (flameDetected) {
+    Serial.println(">>> FLAME DETECTED! <<<");
+  } else {
+    Serial.println("No flame");
+  }
+
+  if (mqttClient.connected()) {
+    String payload = "{";
+    payload += "\"device\":\"flame_node\",";
+    payload += "\"flame_raw\":" + String(flameRaw) + ",";
+    payload += "\"flame_detected\":" + String(flameDetected ? "true" : "false");
+    payload += "}";
+
+    bool success = mqttClient.publish("factory/flame", payload.c_str());
+    if (success) {
+      Serial.print("MQTT Published: ");
+      Serial.println(payload);
+    } else {
+      Serial.println("MQTT Publish FAILED");
+    }
+  }
+
+  delay(1000);
+}
