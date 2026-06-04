@@ -1,6 +1,4 @@
-# SS2026_AES_Lab_B3
-
-## Smart Factory Condition Monitoring using Raspberry Pi, Arduino, MQTT, UDP, HTTP and OPC UA
+# Smart Factory Condition Monitoring using Raspberry Pi, Arduino, MQTT, UDP, HTTP and OPC UA
 
 This project implements a small smart-factory condition monitoring system. Multiple Arduino-based sensor nodes send data to a Raspberry Pi using different communication protocols. The Raspberry Pi works as an industrial gateway: it collects raw sensor data, processes it, converts it into structured OPC UA variables, and exposes the data to an industrial client or dashboard.
 
