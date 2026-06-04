@@ -1,1 +1,181 @@
-blank
+#include <WiFiNINA.h>
+#include <DHT.h>
+
+// =======================
+// WiFi Hotspot settings
+// =======================
+char ssid[] = "Faysal";
+char pass[] = "87654321";
+
+// Raspberry Pi IP address
+char server[] = "10.153.76.64";
+int port = 5000;
+
+// =======================
+// DHT11 setup
+// =======================
+#define DHTPIN 2
+#define DHTTYPE DHT11
+
+DHT dht(DHTPIN, DHTTYPE);
+WiFiClient client;
+
+unsigned long lastSendTime = 0;
+const unsigned long sendInterval = 2000;   // DHT11 minimum 2 seconds
+
+int sampleCounter = 0;
+
+// =======================
+// Connect WiFi
+// =======================
+void connectWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+
+  Serial.println();
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(ssid);
+
+  WiFi.disconnect();
+  delay(1000);
+
+  WiFi.begin(ssid, pass);
+
+  int attempts = 0;
+
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+    Serial.print(".");
+    delay(1000);
+    attempts++;
+  }
+
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("WiFi connected!");
+    Serial.print("Arduino IP: ");
+    Serial.println(WiFi.localIP());
+    Serial.print("Raspberry Pi target: ");
+    Serial.print(server);
+    Serial.print(":");
+    Serial.println(port);
+  } else {
+    Serial.println("WiFi connection failed.");
+  }
+}
+
+// =======================
+// Send HTTP POST to Raspberry Pi
+// =======================
+bool sendHTTP(String payload) {
+  Serial.println();
+  Serial.println("Connecting to Raspberry Pi HTTP server...");
+
+  if (!client.connect(server, port)) {
+    Serial.println("HTTP connection failed!");
+    Serial.println("Check Pi IP, Flask server, and port 5000.");
+    client.stop();
+    return false;
+  }
+
+  client.println("POST /temperature HTTP/1.1");
+  client.print("Host: ");
+  client.println(server);
+  client.println("Content-Type: application/json");
+  client.println("Connection: close");
+  client.print("Content-Length: ");
+  client.println(payload.length());
+  client.println();
+  client.print(payload);
+
+  Serial.print("HTTP sent: ");
+  Serial.println(payload);
+
+  unsigned long timeout = millis();
+
+  while (client.connected() && millis() - timeout < 3000) {
+    while (client.available()) {
+      char c = client.read();
+      Serial.write(c);
+      timeout = millis();
+    }
+  }
+
+  client.stop();
+  Serial.println();
+  Serial.println("HTTP request finished. Connection closed normally.");
+
+  return true;
+}
+
+// =======================
+// Setup
+// =======================
+void setup() {
+  Serial.begin(9600);
+  delay(3000);
+
+  Serial.println("======================================");
+  Serial.println("DHT11 HTTP Temperature Node Starting");
+  Serial.println("======================================");
+
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("ERROR: WiFi module not found!");
+    while (true);
+  }
+
+  Serial.print("WiFi firmware version: ");
+  Serial.println(WiFi.firmwareVersion());
+
+  dht.begin();
+  connectWiFi();
+}
+
+// =======================
+// Loop
+// =======================
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi lost. Reconnecting...");
+    connectWiFi();
+    delay(1000);
+    return;
+  }
+
+  if (millis() - lastSendTime >= sendInterval) {
+    lastSendTime = millis();
+
+    float humidity = dht.readHumidity();
+    float temperatureC = dht.readTemperature();
+
+    if (isnan(humidity) || isnan(temperatureC)) {
+      Serial.println("Failed to read from DHT11 sensor!");
+      Serial.println("Check wiring: S -> D2, + -> 5V, - -> GND");
+      return;
+    }
+
+    sampleCounter++;
+
+    String payload = "{";
+    payload += "\"device\":\"dht11_node\",";
+    payload += "\"sample\":" + String(sampleCounter) + ",";
+    payload += "\"temperature_c\":" + String(temperatureC, 2) + ",";
+    payload += "\"humidity_percent\":" + String(humidity, 2);
+    payload += "}";
+
+    Serial.println();
+    Serial.println("======================================");
+    Serial.print("Sample No: ");
+    Serial.println(sampleCounter);
+
+    Serial.print("Temperature: ");
+    Serial.print(temperatureC);
+    Serial.println(" °C");
+
+    Serial.print("Humidity: ");
+    Serial.print(humidity);
+    Serial.println(" %");
+
+    sendHTTP(payload);
+    Serial.println("======================================");
+  }
+}
