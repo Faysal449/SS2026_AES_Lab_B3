@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="5">
+    <title>ERP Enterprise Live Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background: #f8fafc; color: #111827; }
+        h1 { color: #111827; }
+        .box { background: white; border: 1px solid #d1d5db; border-radius: 12px; padding: 18px; margin-bottom: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+        .ok { color: #047857; font-weight: bold; }
+        .warning { color: #b45309; font-weight: bold; }
+        .critical { color: #b91c1c; font-weight: bold; }
+        table { border-collapse: collapse; width: 100%; background: white; }
+        td, th { border: 1px solid #d1d5db; padding: 10px; text-align: left; }
+        th { background: #e5e7eb; }
+        .note { color: #6b7280; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>ERP Enterprise Live Report</h1>
+    <p class="note">Synthetic/simulated report generated from OPC UA data. Auto-refreshes every 5 seconds.</p>
+
+    <div class="box">
+        <h2>Business Status: <span class="ok">OK</span></h2>
+        <p><b>Last Update:</b> 2026-06-13 18:45:10</p>
+        <p><b>Maintenance Ticket:</b> NONE</p>
+        <p><b>Spare Part Status:</b> OK</p>
+    </div>
+
+    <div class="box">
+        <h2>Production and Cost Summary</h2>
+        <table>
+            <tr><th>Metric</th><th>Value</th></tr>
+            <tr><td>Machine State</td><td>RUNNING_NORMAL</td></tr>
+            <tr><td>MES Status</td><td>PRODUCING_NORMAL</td></tr>
+            <tr><td>Production Count</td><td>166</td></tr>
+            <tr><td>Good Count</td><td>164</td></tr>
+            <tr><td>Reject Count</td><td>2</td></tr>
+            <tr><td>Downtime</td><td>184 seconds</td></tr>
+            <tr><td>Estimated Loss</td><td>7.67 €</td></tr>
+            <tr><td>Availability</td><td>81.38 %</td></tr>
+            <tr><td>Performance</td><td>100.00 %</td></tr>
+            <tr><td>Quality</td><td>98.80 %</td></tr>
+            <tr><td>OEE</td><td>80.40 %</td></tr>
+        </table>
+    </div>
+
+    <div class="box">
+        <h2>Enterprise Decision</h2>
+        <p>Machine condition and production performance are acceptable.</p>
+    </div>
+</body>
+</html>
